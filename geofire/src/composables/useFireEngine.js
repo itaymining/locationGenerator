@@ -47,7 +47,8 @@ export function useFireEngine() {
     } = settings
 
     const { onFire, onSuccess, onError, onLog } = callbacks
-    const features = geojson.features
+    // geojson is a Vue Ref — unwrap to get the plain FeatureCollection
+    const features = (geojson.value ?? geojson).features
     const total = features.length
 
     if (fireType === 'pointRate') {

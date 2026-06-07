@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import * as L from 'leaflet'
 import '@geoman-io/leaflet-geoman-free'
@@ -71,6 +71,33 @@ const mapContainer = ref(null)
 let map = null
 // map from marker leaflet_id → accuracy circle layer
 const accuracyCircles = {}
+
+// Toggle accuracy circles when setting changes
+watch(() => props.settings.markLocationWithError, (show) => {
+  if (show) {
+    // Draw circles for all features that don't have one yet
+    for (const f of props.geojson.features) {
+      if (accuracyCircles[f.leaflet_id]) continue
+      const accuracy = f.properties.accuracy
+      if (!accuracy || accuracy <= 0) continue
+      const [lat, lng] = f.geometry.coordinates
+      const circle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#e8a020',
+        fillColor: '#e8a020',
+        fillOpacity: 0.07,
+        weight: 1,
+        opacity: 0.35,
+        interactive: false,
+      }).addTo(map)
+      accuracyCircles[f.leaflet_id] = circle
+    }
+  } else {
+    // Remove all circles
+    Object.values(accuracyCircles).forEach(c => c.remove())
+    Object.keys(accuracyCircles).forEach(k => delete accuracyCircles[k])
+  }
+})
 
 const icons = {}
 

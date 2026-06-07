@@ -179,8 +179,13 @@ function onStart() {
 }
 
 function onPause() {
-  if (inPause.value) { resume(geojson, config, fireCallbacks(), fireSettings()) }
-  else { pause() }
+  if (inPause.value) {
+    addLog('info', `Resuming from point ${progress.value + 1}`)
+    resume(geojson, config, fireCallbacks(), fireSettings())
+  } else {
+    pause()
+    addLog('warn', `Paused at point ${progress.value} / ${geojson.value.features.length}`)
+  }
 }
 
 function onReset() { reset(); mapRef.value?.resetAllMarkers(); addLog('info', 'Reset') }

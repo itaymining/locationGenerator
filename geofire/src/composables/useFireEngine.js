@@ -51,6 +51,11 @@ export function useFireEngine() {
     const features = (geojson.value ?? geojson).features
     const total = features.length
 
+    function _finish() {
+      clearInterval(timeinterval)
+      const ok = features.filter((_, i) => i < progress.value).length
+      onLog?.({ type: 'info', message: `Done — ${progress.value}/${total} points fired` })
+    }
     if (fireType === 'pointRate') {
       timeinterval = setInterval(async () => {
         if (progress.value >= total) { _finish(); return }
@@ -148,10 +153,6 @@ export function useFireEngine() {
     processLoopCount.value = 1
     inPause.value = false
     fireTimeoutBetweenDaysHelper = undefined
-  }
-
-  function _finish() {
-    clearInterval(timeinterval)
   }
 
   return { progress, inPause, processLoopCount, start, pause, resume, reset, cleanFeature, headersToObject }

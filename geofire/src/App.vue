@@ -50,7 +50,7 @@
           @add-features="onAddFeatures"
           @edit-point="onEditPoint"
         />
-        <pre v-if="showRaw" class="raw-json">{{ JSON.stringify(geojson, null, 2) }}</pre>
+        <pre v-if="showRaw" class="raw-json">{{ JSON.stringify(rawJsonPreview, null, 2) }}</pre>
       </div>
 
       <FireLog :entries="logEntries" />
@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import moment from 'moment'
 import downloadjs from 'downloadjs'
 
@@ -107,8 +107,25 @@ const settings = reactive({
 
 const mapRef = ref(null)
 const logEntries = ref([])
-const showRaw = ref(false)
+const showRaw = ref(true)
 const editingPointIndex = ref(null)
+
+// Raw JSON preview: show what will actually be fired (defaults merged into customProps)
+const rawJsonPreview = computed(() => {
+  const defaults = Object.fromEntries(
+    (config.defaultCustomProps || []).filter(p => p.key).map(p => [p.key, p.value])
+  )
+  return {
+    type: 'FeatureCollection',
+    features: geojson.value.features.map(({ leaflet_id, groupId: gId, ...f }) => ({
+      ...f,
+      properties: {
+        ...f.properties,
+        customProps: { ...defaults, ...f.properties.customProps },
+      },
+    })),
+  }
+})
 
 watch(config, (val) => saveConfig({ ...val }), { deep: true })
 

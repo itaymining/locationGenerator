@@ -87,7 +87,6 @@ export function useGeoJSON() {
         speed,
         speedType: 'kmh',
         heading,
-        locationMethod: locationMethodAssign || 'GNSS',
         accuracy,
         ...(lbsInfo ? { lbsInfo } : {}),
         customProps: customPropsArg || {},

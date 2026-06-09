@@ -3,7 +3,7 @@
     <ConfigPanel
       :config="config"
       :geojson="geojson"
-      :is-firing="progress > 0 && !inPause"
+      :is-firing="isRunning"
       @update-config="onUpdateConfig"
       @update-settings="onUpdateSettings"
       @load-session="onLoadSession"
@@ -14,6 +14,7 @@
         :geojson="geojson"
         :progress="progress"
         :in-pause="inPause"
+        :is-running="isRunning"
         :process-loop-count="processLoopCount"
         :settings="settings"
         :first-point-time="firstPointTime"
@@ -53,7 +54,10 @@
         <pre v-if="showRaw" class="raw-json">{{ JSON.stringify(rawJsonPreview, null, 2) }}</pre>
       </div>
 
-      <FireLog :entries="logEntries" />
+      <FireLog
+        :entries="logEntries"
+        v-model:debugFlags="debugFlags"
+      />
     </div>
 
     <PointEditor
@@ -88,7 +92,7 @@ const {
   addFeature, updateFeatureCustomProps, removeGroup, clearAll, changeTrailTimes, incrementGroupId,
 } = useGeoJSON()
 
-const { progress, inPause, processLoopCount, start, pause, resume, reset } = useFireEngine()
+const { progress, inPause, isRunning, processLoopCount, start, pause, resume, reset } = useFireEngine()
 
 const config = reactive(loadConfig())
 const settings = reactive({
@@ -109,6 +113,7 @@ const mapRef = ref(null)
 const logEntries = ref([])
 const showRaw = ref(true)
 const editingPointIndex = ref(null)
+const debugFlags = ref({ logBody: false, logIndex: false, logHeaders: false })
 
 // Raw JSON preview: show what will actually be fired (defaults merged into customProps)
 const rawJsonPreview = computed(() => {
@@ -160,7 +165,26 @@ function fireCallbacks() {
     onFire: (i) => { const f = geojson.value.features[i]; if (f) mapRef.value?.setMarkerFiring(f.leaflet_id) },
     onSuccess: (i) => { const f = geojson.value.features[i]; if (f) mapRef.value?.setMarkerSuccess(f.leaflet_id) },
     onError: (i) => { const f = geojson.value.features[i]; if (f) mapRef.value?.setMarkerError(f.leaflet_id) },
-    onLog: (entry) => addLog(entry.type, entry.message),
+    onLog: (entry) => {
+      // main log line — carry body/index/indices for debug rendering in FireLog
+      logEntries.value.push({
+        type: entry.type,
+        message: entry.message,
+        time: new Date().toLocaleTimeString(),
+        body: debugFlags.value.logBody ? entry.body : undefined,
+        index: debugFlags.value.logIndex ? entry.index : undefined,
+        indices: debugFlags.value.logIndex ? entry.indices : undefined,
+      })
+      // headers debug line
+      if (debugFlags.value.logHeaders && config.headers?.length) {
+        const hdrs = Object.fromEntries(config.headers.filter(h => h.key).map(h => [h.key, h.value]))
+        logEntries.value.push({
+          type: 'debug',
+          message: `  headers: ${JSON.stringify(hdrs)}`,
+          time: '',
+        })
+      }
+    },
   }
 }
 
@@ -254,7 +278,7 @@ async function onFileUpload(event) {
 }
 
 function addLog(type, message) {
-  logEntries.value.push({ type, message, time: new Date().toLocaleTimeString() })
+  logEntries.value.push({ type, message, time: new Date().toLocaleTimeString(), body: undefined, index: undefined })
 }
 </script>
 

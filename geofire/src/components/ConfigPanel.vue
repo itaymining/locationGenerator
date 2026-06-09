@@ -14,7 +14,10 @@
     <div v-show="!collapsed" class="panel-body">
 
       <!-- Endpoint -->
-      <div class="section-header">Endpoint</div>
+      <div class="section-header">
+        Endpoint
+        <HelpTip text="The URL that receives each location point as an HTTP POST request with a GeoJSON Feature body." />
+      </div>
       <div class="field">
         <label class="label">POST URL</label>
         <input
@@ -28,7 +31,10 @@
       </div>
 
       <!-- Request Headers -->
-      <div class="section-header">Request Headers</div>
+      <div class="section-header">
+        Request Headers
+        <HelpTip text="HTTP headers sent with every POST request. Use for authentication (e.g. Authorization: Bearer token) or custom API keys." />
+      </div>
       <div class="kv-table">
         <div class="kv-header-row">
           <span class="kv-col-label">Header</span>
@@ -49,7 +55,10 @@
       </div>
 
       <!-- Default Properties -->
-      <div class="section-header">Default Properties</div>
+      <div class="section-header">
+        Default Properties
+        <HelpTip text="Key-value pairs added to every fired point's properties. Per-point custom props override these when keys conflict." />
+      </div>
       <p class="hint">Merged into every fired point. Per-point values override.</p>
       <div class="kv-table">
         <div class="kv-header-row">
@@ -71,28 +80,46 @@
       </div>
 
       <!-- Trail Settings -->
-      <div class="section-header">Trail Settings</div>
+      <div class="section-header">
+        Trail Settings
+        <HelpTip text="Controls how the trail is interpolated when you click on the map." />
+      </div>
       <div class="fields-grid">
         <div class="field">
-          <label class="label">Speed km/h</label>
+          <label class="label label-with-help">
+            Speed km/h
+            <HelpTip text="Subject movement speed. Used to auto-generate intermediate points between clicks — the farther apart, the more points." />
+          </label>
           <input class="input input-sm" type="number" v-model.number="localSettings.subjectSpeedKMPH" @input="syncSettings" />
         </div>
         <div class="field">
-          <label class="label">Accuracy m</label>
+          <label class="label label-with-help">
+            Accuracy m
+            <HelpTip text="GPS accuracy radius in metres. Each point is randomly offset within this radius to simulate real device noise." />
+          </label>
           <input class="input input-sm" type="number" v-model.number="localSettings.locationMarginError" @input="syncSettings" />
         </div>
         <div class="field">
-          <label class="label">Sample sec</label>
+          <label class="label label-with-help">
+            Sample sec
+            <HelpTip text="Device reporting interval in seconds. One point is generated per interval — determines point density along the trail." />
+          </label>
           <input class="input input-sm" type="number" v-model.number="localSettings.deviceSamplingSeconds" @input="syncSettings" />
         </div>
       </div>
 
       <!-- Fire Settings -->
-      <div class="section-header">Fire Settings</div>
+      <div class="section-header">
+        Fire Settings
+        <HelpTip text="Controls the speed at which points are sent to the endpoint." />
+      </div>
       <div class="fire-mode-group">
         <label class="fire-mode-option" :class="{ active: localSettings.fireType === 'pointRate' }">
           <input type="radio" v-model="localSettings.fireType" value="pointRate" @change="syncSettings" />
-          <span class="mode-label">Point Rate</span>
+          <span class="mode-label" style="display:flex;align-items:center;gap:4px">
+            Point Rate
+            <HelpTip text="Fire one point every N seconds. Simple metered sending — each point is sent individually on a fixed interval." />
+          </span>
           <div class="mode-input-wrap">
             <input
               class="input input-sm"
@@ -108,7 +135,10 @@
 
         <label class="fire-mode-option" :class="{ active: localSettings.fireType === 'reportRate' }">
           <input type="radio" v-model="localSettings.fireType" value="reportRate" @change="syncSettings" />
-          <span class="mode-label">Report Rate</span>
+          <span class="mode-label" style="display:flex;align-items:center;gap:4px">
+            Report Rate
+            <HelpTip text="Fire all points that fall within a time window (batch). Simulates a device that sends accumulated reports every N seconds." />
+          </span>
           <div class="mode-input-wrap">
             <input
               class="input input-sm"
@@ -123,42 +153,54 @@
       </div>
 
       <div v-if="localSettings.fireType === 'pointRate'" class="field" style="margin-top: 6px">
-        <label class="label">Day Boundary Timeout (sec)</label>
+        <label class="label label-with-help">
+          Day Boundary Timeout (sec)
+          <HelpTip text="Extra pause (in seconds) when the trail crosses midnight. Simulates a device that goes silent at day rollover before resuming. Set to 0 for no pause." />
+        </label>
         <input class="input input-sm" type="number" v-model.number="localSettings.fireTimeoutBetweenDaysSec" @input="syncSettings" />
       </div>
 
       <!-- Options -->
       <div class="section-header">Options</div>
       <div class="toggle-list">
-        <label class="toggle-row">
+        <div class="toggle-row">
           <label class="toggle">
             <input type="checkbox" v-model="localSettings.markLocationWithError" @change="syncSettings" />
             <span class="toggle-slider"></span>
           </label>
           <span>Mark accuracy circle on map</span>
-        </label>
-        <label class="toggle-row">
+          <HelpTip text="Draw a translucent circle around each point representing the GPS accuracy radius. Helps visualise position uncertainty." />
+        </div>
+        <div class="toggle-row">
           <label class="toggle">
             <input type="checkbox" v-model="localSettings.showMap" @change="syncSettings" />
             <span class="toggle-slider"></span>
           </label>
           <span>Show map</span>
-        </label>
-        <label class="toggle-row">
+          <HelpTip text="Toggle the map panel. Hide it to get more space for the raw JSON view or the log." />
+        </div>
+        <div class="toggle-row">
           <label class="toggle">
             <input type="checkbox" v-model="localSettings.advanceTrailOverTime" @change="syncSettings" />
             <span class="toggle-slider"></span>
           </label>
           <span>Advance trail over time</span>
-        </label>
+          <HelpTip text="After completing the full trail, shift all timestamps forward by the sampling interval and loop again. Simulates a device that keeps reporting continuously over many cycles." />
+        </div>
       </div>
       <div v-if="localSettings.advanceTrailOverTime" class="field" style="margin-top: 6px">
-        <label class="label">Loops</label>
+        <label class="label label-with-help">
+          Loops
+          <HelpTip text="Number of times to repeat the trail. Each loop shifts timestamps forward by the sample interval. Set to a high value for long-running simulations." />
+        </label>
         <input class="input input-sm" type="number" v-model.number="localSettings.advanceTrailOverTimeNumOfLoops" @input="syncSettings" />
       </div>
 
       <!-- Sessions -->
-      <div class="section-header">Sessions</div>
+      <div class="section-header">
+        Sessions
+        <HelpTip text="Save and reload named trail configurations. Stores the trail points and all endpoint/header/property settings in your browser's localStorage." />
+      </div>
       <div class="session-save">
         <input class="input input-sm" v-model="newSessionName" placeholder="Session name…" @keyup.enter="saveCurrentSession" />
         <button
@@ -197,6 +239,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useStorage } from '../composables/useStorage.js'
+import HelpTip from './HelpTip.vue'
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -337,6 +380,7 @@ function removeSession(name) {
 }
 
 .field { display: flex; flex-direction: column; gap: 3px; }
+.label-with-help { display: flex; align-items: center; gap: 4px; }
 
 .fields-grid {
   display: grid;

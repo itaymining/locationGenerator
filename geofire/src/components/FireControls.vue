@@ -23,7 +23,7 @@
         </button>
         <button
           class="btn btn-ghost"
-          :disabled="progress === 0"
+          :disabled="!isRunning && !inPause && progress === 0"
           data-tip="Reset all markers to default state"
           @click="$emit('reset')"
         >
@@ -148,6 +148,7 @@ const props = defineProps({
   geojson: { type: Object, required: true },
   progress: { type: Number, default: 0 },
   inPause: { type: Boolean, default: false },
+  isRunning: { type: Boolean, default: false },
   processLoopCount: { type: Number, default: 1 },
   settings: { type: Object, required: true },
   firstPointTime: { type: Object, default: null },
@@ -165,8 +166,8 @@ const newFrom = ref('')
 const newTo = ref('')
 
 const total = computed(() => props.geojson.features.length)
-const isFiring = computed(() => props.progress > 0 && !props.inPause)
-const canPause = computed(() => props.progress > 0 && props.progress < total.value)
+const isFiring = computed(() => props.isRunning)
+const canPause = computed(() => props.isRunning || props.inPause)
 
 const progressPct = computed(() =>
   total.value > 0 ? Math.ceil((props.progress * 100) / total.value) : 0

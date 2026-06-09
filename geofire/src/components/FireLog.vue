@@ -1,17 +1,52 @@
 <template>
-  <div class="fire-log" ref="logEl" @scroll="onScroll">
-    <div class="log-inner">
-      <div v-if="entries.length === 0" class="log-empty">
-        — no activity yet —
+  <div class="fire-log-wrap">
+    <!-- Terminal header -->
+    <div class="terminal-header">
+      <span class="terminal-title">TERMINAL</span>
+      <div class="debug-checks">
+        <label class="debug-check">
+          <input type="checkbox" v-model="logBody" />
+          <span>Log Body</span>
+        </label>
+        <label class="debug-check">
+          <input type="checkbox" v-model="logIndex" />
+          <span>Log Pt#</span>
+        </label>
+        <label class="debug-check">
+          <input type="checkbox" v-model="logHeaders" />
+          <span>Log Headers</span>
+        </label>
       </div>
-      <div
-        v-for="(entry, i) in entries"
-        :key="i"
-        class="log-line"
-        :class="`log-${entry.type}`"
-      >
-        <span class="log-time">{{ entry.time }}</span>
-        <span class="log-msg">{{ entry.message }}</span>
+    </div>
+
+    <!-- Log scroll area -->
+    <div class="fire-log" ref="logEl" @scroll="onScroll">
+      <div class="log-inner">
+        <div v-if="entries.length === 0" class="log-empty">
+          — no activity yet —
+        </div>
+        <template v-for="(entry, i) in entries" :key="i">
+          <div class="log-line" :class="`log-${entry.type}`">
+            <span class="log-time">{{ entry.time }}</span>
+            <span class="log-msg">{{ entry.message }}</span>
+          </div>
+          <!-- Debug: point index -->
+          <div
+            v-if="logIndex && entry.index !== undefined"
+            class="log-line log-debug"
+          >
+            <span class="log-time"></span>
+            <span class="log-msg">  pt# {{ entry.index + 1 }}{{ entry.indices ? ` – ${entry.indices[entry.indices.length - 1] + 1}` : '' }}</span>
+          </div>
+          <!-- Debug: POST body -->
+          <div
+            v-if="logBody && entry.body"
+            class="log-line log-debug log-body"
+          >
+            <span class="log-time"></span>
+            <span class="log-msg">{{ JSON.stringify(entry.body) }}</span>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -22,10 +57,24 @@ import { ref, watch, nextTick } from 'vue'
 
 const props = defineProps({
   entries: { type: Array, default: () => [] },
+  debugFlags: { type: Object, default: () => ({ logBody: false, logIndex: false, logHeaders: false }) },
 })
+const emit = defineEmits(['update:debugFlags'])
 
 const logEl = ref(null)
 const userScrolled = ref(false)
+
+const logBody = ref(props.debugFlags.logBody)
+const logIndex = ref(props.debugFlags.logIndex)
+const logHeaders = ref(props.debugFlags.logHeaders)
+
+watch([logBody, logIndex, logHeaders], () => {
+  emit('update:debugFlags', {
+    logBody: logBody.value,
+    logIndex: logIndex.value,
+    logHeaders: logHeaders.value,
+  })
+})
 
 function onScroll() {
   const el = logEl.value
@@ -42,18 +91,102 @@ watch(() => props.entries.length, async () => {
 </script>
 
 <style scoped>
-.fire-log {
-  height: 160px;
-  overflow-y: auto;
-  background: #060810;
-  border-top: 1px solid var(--border);
+.fire-log-wrap {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: #060810;
+}
+
+/* ─── Terminal header ──────────────────────────── */
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  height: 28px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(4, 5, 8, 0.9);
+}
+
+.terminal-title {
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.debug-checks {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+
+.debug-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.debug-check:hover { color: var(--text-secondary); }
+.debug-check input:checked + span { color: var(--accent); }
+
+.debug-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  border: 1px solid #2a3545;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.debug-check input[type="checkbox"]:checked {
+  background: rgba(232,160,32,0.15);
+  border-color: var(--accent);
+}
+
+.debug-check input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0px;
+  width: 4px;
+  height: 7px;
+  border: 1.5px solid var(--accent);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ─── Log scroll area ──────────────────────────── */
+.fire-log {
+  height: 140px;
+  overflow-y: auto;
   font-family: var(--font-mono);
   font-size: 11px;
   position: relative;
 }
 
-/* top fade gradient for depth */
 .fire-log::before {
   content: '';
   position: sticky;
@@ -93,9 +226,10 @@ watch(() => props.entries.length, async () => {
 .log-line:hover { background: rgba(255,255,255,0.025); }
 
 .log-success { border-left-color: rgba(0,214,143,0.4); }
-.log-error { border-left-color: rgba(255,77,77,0.4); }
-.log-warn { border-left-color: rgba(232,160,32,0.4); }
-.log-info { border-left-color: transparent; }
+.log-error   { border-left-color: rgba(255,77,77,0.4); }
+.log-warn    { border-left-color: rgba(232,160,32,0.4); }
+.log-info    { border-left-color: transparent; }
+.log-debug   { border-left-color: rgba(74,90,106,0.3); }
 
 .log-time {
   color: #243040;
@@ -108,7 +242,9 @@ watch(() => props.entries.length, async () => {
 
 .log-msg { word-break: break-all; font-family: var(--font-mono); }
 .log-success .log-msg { color: #00d68f; }
-.log-error .log-msg { color: #ff6b6b; }
-.log-info .log-msg { color: #4a5a6a; }
-.log-warn .log-msg { color: #e8a020; }
+.log-error   .log-msg { color: #ff6b6b; }
+.log-info    .log-msg { color: #4a5a6a; }
+.log-warn    .log-msg { color: #e8a020; }
+.log-debug   .log-msg { color: #2e4050; font-size: 10px; }
+.log-body    .log-msg { color: #2a5060; word-break: break-all; }
 </style>

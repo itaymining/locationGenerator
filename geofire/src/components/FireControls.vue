@@ -241,22 +241,25 @@ function applyTimeShift() {
 
 <style scoped>
 .fire-controls {
-  background: rgba(5, 6, 10, 0.92);
+  background: linear-gradient(180deg, rgba(16,18,25,0.96), rgba(9,11,16,0.96));
   border-bottom: 1px solid var(--border);
-  padding: 0 12px;
+  box-shadow: 0 1px 0 rgba(240,168,48,0.1), 0 6px 20px rgba(0,0,0,0.3);
+  padding: 0 14px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   backdrop-filter: blur(8px);
+  position: relative;
+  z-index: 5;
 }
 
 .controls-row {
-  min-height: 44px;
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
-  padding: 5px 0;
+  padding: 6px 0;
 }
 
 .btn-group { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
@@ -271,38 +274,40 @@ function applyTimeShift() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: 5px 7px;
-  background: transparent;
-  border: 1px solid transparent;
+  gap: 3px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
   color: var(--text-muted);
-  min-width: 38px;
+  min-width: 42px;
   position: relative;
 }
 .tool-btn:hover {
   background: var(--bg-surface-hover);
-  border-color: var(--border);
+  border-color: var(--border-strong);
   color: var(--text-primary);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 .tool-btn--active {
   background: var(--accent-dim);
   border-color: var(--border-accent);
   color: var(--accent-hover);
+  box-shadow: inset 0 0 0 1px rgba(240,168,48,0.15), 0 0 12px rgba(240,168,48,0.12);
 }
 
 .tool-icon {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   letter-spacing: -0.02em;
 }
 .tool-label {
   font-family: var(--font-condensed);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   line-height: 1;
 }

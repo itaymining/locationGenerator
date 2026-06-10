@@ -51,7 +51,13 @@
           @add-features="onAddFeatures"
           @edit-point="onEditPoint"
         />
-        <pre v-if="showRaw" class="raw-json">{{ JSON.stringify(rawJsonPreview, null, 2) }}</pre>
+        <div v-if="showRaw" class="raw-json-panel">
+          <div class="raw-json-head">
+            <span class="raw-json-title"><span class="rj-dot"></span> RAW PAYLOAD</span>
+            <span class="raw-json-count">{{ rawJsonPreview.features.length }} feat</span>
+          </div>
+          <pre class="raw-json">{{ JSON.stringify(rawJsonPreview, null, 2) }}</pre>
+        </div>
       </div>
 
       <FireLog
@@ -324,18 +330,65 @@ function addLog(type, message) {
 
 .map-area { flex: 1; display: flex; min-height: 0; overflow: hidden; }
 
-.raw-json {
-  width: 300px;
+.raw-json-panel {
+  width: 320px;
   height: 100%;
-  overflow-y: auto;
-  background: rgba(4, 5, 8, 0.97);
-  color: #e8a020;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 12px;
-  border-left: 1px solid var(--border);
   flex-shrink: 0;
-  line-height: 1.6;
-  opacity: 0.85;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(240,168,48,0.02), transparent 140px),
+    rgba(5, 6, 9, 0.98);
+}
+
+.raw-json-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: rgba(12,14,20,0.9);
+}
+.raw-json-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+.rj-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 7px var(--accent-glow);
+}
+.raw-json-count {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  padding: 1px 7px;
+  border: 1px solid var(--border-accent);
+  border-radius: 3px;
+  background: var(--accent-dim);
+}
+
+.raw-json {
+  flex: 1;
+  overflow-y: auto;
+  color: #e0b878;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 12px 14px;
+  line-height: 1.65;
 }
 </style>

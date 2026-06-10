@@ -232,7 +232,7 @@ watch(() => props.entries.length, async () => {
 .log-debug   { border-left-color: rgba(74,90,106,0.3); }
 
 .log-time {
-  color: #243040;
+  color: #4a5a6c;
   flex-shrink: 0;
   width: 80px;
   font-size: 10px;
@@ -241,10 +241,10 @@ watch(() => props.entries.length, async () => {
 }
 
 .log-msg { word-break: break-all; font-family: var(--font-mono); }
-.log-success .log-msg { color: #00d68f; }
-.log-error   .log-msg { color: #ff6b6b; }
-.log-info    .log-msg { color: #4a5a6a; }
-.log-warn    .log-msg { color: #e8a020; }
-.log-debug   .log-msg { color: #2e4050; font-size: 10px; }
-.log-body    .log-msg { color: #2a5060; word-break: break-all; }
+.log-success .log-msg { color: #2ee0a4; }
+.log-error   .log-msg { color: #ff7070; }
+.log-info    .log-msg { color: #9aa7b6; }
+.log-warn    .log-msg { color: var(--accent-hover); }
+.log-debug   .log-msg { color: #6b7a8c; font-size: 10px; }
+.log-body    .log-msg { color: #6f93a6; word-break: break-all; }
 </style>

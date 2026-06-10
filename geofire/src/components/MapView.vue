@@ -410,4 +410,16 @@ defineExpose({
   width: 100%;
   height: 100%;
 }
+/* Tactical frame: subtle inset vignette + amber edge to seat the bright map into the dark UI */
+.map-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 450;
+  box-shadow:
+    inset 0 0 0 1px rgba(240,168,48,0.08),
+    inset 0 7px 28px rgba(6,7,11,0.55),
+    inset 0 -7px 28px rgba(6,7,11,0.45);
+}
 </style>

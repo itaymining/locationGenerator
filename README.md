@@ -1,4 +1,14 @@
+# 🔥 GeoFire
+
+### ▶ [Try GeoFire live →](https://itaymining.github.io/locationGenerator/)
+
+Open-source GeoJSON location trail simulator — draw trails on a map, configure any HTTP POST endpoint, and fire location points for testing. The app lives in [`geofire/`](./geofire) (Vue 3 + Vite); see its [README](./geofire/README.md) for setup and features.
+
+---
+
 # Location Generator Creator - User Manual
+
+> ⚠️ The manual below documents an earlier version of this tool and is kept for reference.
 
 ## Overview
 The Location Generator Creator is a tool designed to simulate and generate location data for devices. It allows users to create, modify, and visualize location trails, which can be used for testing and development purposes. The tool supports various features such as setting environment, device serial numbers, location methods, and more.

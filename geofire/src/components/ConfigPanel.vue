@@ -314,14 +314,17 @@ function removeSession(name) {
 
 <style scoped>
 .config-panel {
-  width: 272px;
-  min-width: 272px;
+  width: 280px;
+  min-width: 280px;
   height: 100vh;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
   flex-shrink: 0;
-  background: rgba(5, 6, 10, 0.97);
+  background:
+    linear-gradient(180deg, rgba(240,168,48,0.025), transparent 200px),
+    var(--bg-panel);
+  box-shadow: inset -1px 0 0 rgba(255,255,255,0.03), 6px 0 28px rgba(0,0,0,0.35);
   transition: width var(--transition-slow), min-width var(--transition-slow);
 }
 
@@ -334,31 +337,38 @@ function removeSession(name) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 8px 0 14px;
-  height: 44px;
+  padding: 0 8px 0 15px;
+  height: 48px;
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  background: rgba(5, 6, 10, 0.99);
+  background: linear-gradient(180deg, rgba(16,18,25,0.99), rgba(10,12,17,0.99));
   z-index: 10;
   flex-shrink: 0;
 }
 
 .panel-title {
   font-family: var(--font-condensed);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   color: var(--accent);
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(240,168,48,0.45);
 }
 
 .title-icon {
-  font-size: 14px;
-  opacity: 0.8;
+  font-size: 15px;
+  color: var(--accent-hover);
+  filter: drop-shadow(0 0 5px rgba(240,168,48,0.7));
+  animation: title-pulse 3.2s ease-in-out infinite;
+}
+@keyframes title-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; filter: drop-shadow(0 0 9px rgba(240,168,48,0.9)); }
 }
 
 .collapse-btn {
@@ -389,12 +399,12 @@ function removeSession(name) {
 }
 
 .hint {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: -4px;
-  line-height: 1.4;
-  font-family: var(--font-condensed);
-  letter-spacing: 0.03em;
+  margin-top: -3px;
+  line-height: 1.45;
+  font-family: var(--font-ui);
+  letter-spacing: 0.01em;
 }
 
 /* KV table column headers */
@@ -405,11 +415,11 @@ function removeSession(name) {
 }
 .kv-col-label {
   flex: 1;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
   font-family: var(--font-condensed);
   padding-left: 2px;
 }
@@ -439,8 +449,9 @@ function removeSession(name) {
 }
 .fire-mode-option:hover { border-color: var(--border-strong); background: var(--bg-surface); }
 .fire-mode-option.active {
-  border-color: rgba(232,160,32,0.3);
-  background: rgba(232,160,32,0.04);
+  border-color: var(--border-accent);
+  background: linear-gradient(180deg, rgba(240,168,48,0.1), rgba(240,168,48,0.03));
+  box-shadow: inset 0 0 0 1px rgba(240,168,48,0.12), 0 2px 12px rgba(240,168,48,0.08);
 }
 .fire-mode-option input[type="radio"] { accent-color: var(--accent); flex-shrink: 0; }
 .mode-label {
@@ -460,10 +471,10 @@ function removeSession(name) {
 }
 .mode-input-wrap .input { width: 60px; text-align: right; }
 .mode-unit {
-  font-size: 9px;
-  color: var(--text-muted);
-  font-family: var(--font-condensed);
-  letter-spacing: 0.05em;
+  font-size: 9.5px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 

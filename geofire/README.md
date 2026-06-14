@@ -1,6 +1,6 @@
 # 🔥 GeoFire
 
-### ▶ [Try GeoFire live →](https://itaymining.github.io/locationGenerator/)
+### ▶ [Try GeoFire live →](https://itaymining.github.io/GeoFire/)
 
 Open-source GeoJSON location trail simulator. Draw trails on a map, configure any HTTP POST endpoint, and fire location points for testing and development purposes.
 

@@ -11,48 +11,27 @@
       >{{ collapsed ? '›' : '‹' }}</button>
     </div>
 
+    <div v-show="!collapsed" class="panel-tabs">
+      <button
+        class="panel-tab"
+        :class="{ active: activeTab === 'editor' }"
+        @click="activeTab = 'editor'"
+      >Editor</button>
+      <button
+        class="panel-tab"
+        :class="{ active: activeTab === 'sessions' }"
+        @click="activeTab = 'sessions'"
+      >Sessions</button>
+      <button
+        class="panel-tab"
+        :class="{ active: activeTab === 'run' }"
+        @click="activeTab = 'run'"
+      >Run</button>
+    </div>
+
     <div v-show="!collapsed" class="panel-body">
 
-      <!-- Endpoint -->
-      <div class="section-header">
-        Endpoint
-        <HelpTip text="The URL that receives each location point as an HTTP POST request with a GeoJSON Feature body." />
-      </div>
-      <div class="field">
-        <label class="label">POST URL</label>
-        <input
-          class="input input-mono"
-          v-model="local.endpointUrl"
-          placeholder="https://api.example.com/locations"
-          autocomplete="off"
-          spellcheck="false"
-          @input="syncConfig"
-        />
-      </div>
-
-      <!-- Request Headers -->
-      <div class="section-header">
-        Request Headers
-        <HelpTip text="HTTP headers sent with every POST request. Use for authentication (e.g. Authorization: Bearer token) or custom API keys." />
-      </div>
-      <div class="kv-table">
-        <div class="kv-header-row">
-          <span class="kv-col-label">Header</span>
-          <span class="kv-col-label">Value</span>
-        </div>
-        <div v-for="(h, i) in local.headers" :key="i" class="kv-row">
-          <input class="input input-sm input-mono" v-model="h.key" placeholder="X-Api-Key" @input="syncConfig" />
-          <input class="input input-sm input-mono" v-model="h.value" placeholder="value" @input="syncConfig" />
-          <button
-            class="btn btn-danger btn-sm btn-icon"
-            data-tip="Remove header"
-            @click="removeHeader(i)"
-          >✕</button>
-        </div>
-        <button class="btn btn-ghost btn-sm add-row-btn" @click="addHeader">
-          <span class="add-icon">+</span> Add Header
-        </button>
-      </div>
+      <div v-show="activeTab === 'editor'" class="panel-tab-content">
 
       <!-- Default Properties -->
       <div class="section-header">
@@ -108,6 +87,129 @@
         </div>
       </div>
 
+      <div class="toggle-row" style="margin-top: 8px">
+        <label class="toggle">
+          <input type="checkbox" v-model="localSettings.speedIsMaster" @change="syncSettings" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span>Keep speed fixed (strict)</span>
+        <HelpTip text="When on, speed and sampling rate are both fixed — points sit exactly stepMeters apart on a straight line, no jitter. A click too close to the previous point to fit one interval is rejected with a brief warning. A click farther than a whole number of intervals only draws the intervals that fit; the leftover distance to your click is dropped silently." />
+      </div>
+
+      <!-- Options -->
+      <div class="section-header">Options</div>
+      <div class="toggle-list">
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" v-model="localSettings.markLocationWithError" @change="syncSettings" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Mark accuracy circle on map</span>
+          <HelpTip text="Draw a translucent circle around each point representing the GPS accuracy radius. Helps visualise position uncertainty." />
+        </div>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" v-model="localSettings.showMap" @change="syncSettings" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Show map</span>
+          <HelpTip text="Toggle the map panel. Hide it to get more space for the raw JSON view or the log." />
+        </div>
+      </div>
+
+      </div>
+
+      <div v-show="activeTab === 'sessions'" class="panel-tab-content">
+
+      <div class="session-save">
+        <input class="input input-sm" v-model="newSessionName" placeholder="Session name…" @keyup.enter="saveCurrentSession" />
+        <button
+          class="btn btn-primary btn-sm"
+          data-tip="Save current trail as session"
+          :disabled="!newSessionName.trim()"
+          @click="saveCurrentSession"
+        >Save</button>
+      </div>
+
+      <div class="session-list">
+        <div v-if="sessionNames.length === 0" class="no-sessions">
+          <span>No saved sessions</span>
+        </div>
+        <div v-for="name in sessionNames" :key="name" class="session-row">
+          <span class="session-name" :title="name">{{ name }}</span>
+          <div class="session-actions">
+            <button
+              class="btn btn-ghost btn-sm"
+              data-tip="Load this session"
+              @click="loadSession(name)"
+            >Load</button>
+            <button
+              class="btn btn-danger btn-sm"
+              data-tip="Delete session"
+              @click="removeSession(name)"
+            >Del</button>
+          </div>
+        </div>
+      </div>
+
+      </div>
+
+      <div v-show="activeTab === 'run'" class="panel-tab-content">
+
+      <RunControls
+        :geojson="geojson"
+        :progress="progress"
+        :in-pause="inPause"
+        :is-running="isRunning"
+        :process-loop-count="processLoopCount"
+        :settings="localSettings"
+        :trail-duration="trailDuration"
+        @start="$emit('start')"
+        @pause="$emit('pause')"
+        @reset="$emit('reset')"
+      />
+
+      <!-- Endpoint -->
+      <div class="section-header">
+        Endpoint
+        <HelpTip text="The URL that receives each location point as an HTTP POST request with a GeoJSON Feature body." />
+      </div>
+      <div class="field">
+        <label class="label">POST URL</label>
+        <input
+          class="input input-mono"
+          v-model="local.endpointUrl"
+          placeholder="https://api.example.com/locations"
+          autocomplete="off"
+          spellcheck="false"
+          @input="syncConfig"
+        />
+      </div>
+
+      <!-- Request Headers -->
+      <div class="section-header">
+        Request Headers
+        <HelpTip text="HTTP headers sent with every POST request. Use for authentication (e.g. Authorization: Bearer token) or custom API keys." />
+      </div>
+      <div class="kv-table">
+        <div class="kv-header-row">
+          <span class="kv-col-label">Header</span>
+          <span class="kv-col-label">Value</span>
+        </div>
+        <div v-for="(h, i) in local.headers" :key="i" class="kv-row">
+          <input class="input input-sm input-mono" v-model="h.key" placeholder="X-Api-Key" @input="syncConfig" />
+          <input class="input input-sm input-mono" v-model="h.value" placeholder="value" @input="syncConfig" />
+          <button
+            class="btn btn-danger btn-sm btn-icon"
+            data-tip="Remove header"
+            @click="removeHeader(i)"
+          >✕</button>
+        </div>
+        <button class="btn btn-ghost btn-sm add-row-btn" @click="addHeader">
+          <span class="add-icon">+</span> Add Header
+        </button>
+      </div>
+
       <!-- Fire Settings -->
       <div class="section-header">
         Fire Settings
@@ -160,33 +262,13 @@
         <input class="input input-sm" type="number" v-model.number="localSettings.fireTimeoutBetweenDaysSec" @input="syncSettings" />
       </div>
 
-      <!-- Options -->
-      <div class="section-header">Options</div>
-      <div class="toggle-list">
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" v-model="localSettings.markLocationWithError" @change="syncSettings" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span>Mark accuracy circle on map</span>
-          <HelpTip text="Draw a translucent circle around each point representing the GPS accuracy radius. Helps visualise position uncertainty." />
-        </div>
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" v-model="localSettings.showMap" @change="syncSettings" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span>Show map</span>
-          <HelpTip text="Toggle the map panel. Hide it to get more space for the raw JSON view or the log." />
-        </div>
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" v-model="localSettings.advanceTrailOverTime" @change="syncSettings" />
-            <span class="toggle-slider"></span>
-          </label>
-          <span>Advance trail over time</span>
-          <HelpTip text="After completing the full trail, shift all timestamps forward by the sampling interval and loop again. Simulates a device that keeps reporting continuously over many cycles." />
-        </div>
+      <div class="toggle-row" style="margin-top: 8px">
+        <label class="toggle">
+          <input type="checkbox" v-model="localSettings.advanceTrailOverTime" @change="syncSettings" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span>Advance trail over time</span>
+        <HelpTip text="After completing the full trail, shift all timestamps forward by the sampling interval and loop again. Simulates a device that keeps reporting continuously over many cycles." />
       </div>
       <div v-if="localSettings.advanceTrailOverTime" class="field" style="margin-top: 6px">
         <label class="label label-with-help">
@@ -196,40 +278,6 @@
         <input class="input input-sm" type="number" v-model.number="localSettings.advanceTrailOverTimeNumOfLoops" @input="syncSettings" />
       </div>
 
-      <!-- Sessions -->
-      <div class="section-header">
-        Sessions
-        <HelpTip text="Save and reload named trail configurations. Stores the trail points and all endpoint/header/property settings in your browser's localStorage." />
-      </div>
-      <div class="session-save">
-        <input class="input input-sm" v-model="newSessionName" placeholder="Session name…" @keyup.enter="saveCurrentSession" />
-        <button
-          class="btn btn-primary btn-sm"
-          data-tip="Save current trail as session"
-          :disabled="!newSessionName.trim()"
-          @click="saveCurrentSession"
-        >Save</button>
-      </div>
-
-      <div class="session-list">
-        <div v-if="sessionNames.length === 0" class="no-sessions">
-          <span>No saved sessions</span>
-        </div>
-        <div v-for="name in sessionNames" :key="name" class="session-row">
-          <span class="session-name" :title="name">{{ name }}</span>
-          <div class="session-actions">
-            <button
-              class="btn btn-ghost btn-sm"
-              data-tip="Load this session"
-              @click="loadSession(name)"
-            >Load</button>
-            <button
-              class="btn btn-danger btn-sm"
-              data-tip="Delete session"
-              @click="removeSession(name)"
-            >Del</button>
-          </div>
-        </div>
       </div>
 
     </div>
@@ -240,18 +288,24 @@
 import { ref, reactive, computed } from 'vue'
 import { useStorage } from '../composables/useStorage.js'
 import HelpTip from './HelpTip.vue'
+import RunControls from './RunControls.vue'
 
 const props = defineProps({
   config: { type: Object, required: true },
   geojson: { type: Object, required: true },
-  isFiring: { type: Boolean, default: false },
+  progress: { type: Number, default: 0 },
+  inPause: { type: Boolean, default: false },
+  isRunning: { type: Boolean, default: false },
+  processLoopCount: { type: Number, default: 1 },
+  trailDuration: { type: Object, default: null },
 })
 
-const emit = defineEmits(['update-config', 'update-settings', 'load-session'])
+const emit = defineEmits(['update-config', 'update-settings', 'load-session', 'start', 'pause', 'reset'])
 
 const { saveSession, deleteSession, loadSessions } = useStorage()
 
 const collapsed = ref(false)
+const activeTab = ref('editor')
 const newSessionName = ref('')
 
 const local = reactive({
@@ -264,6 +318,7 @@ const localSettings = reactive({
   subjectSpeedKMPH: 5,
   locationMarginError: 12,
   deviceSamplingSeconds: 60,
+  speedIsMaster: false,
   fireType: 'pointRate',
   fireTimeoutSec: 1,
   fireBatchTimeoutSec: 120,
@@ -379,14 +434,52 @@ function removeSession(name) {
 }
 .collapse-btn:hover { color: var(--text-primary); }
 
+.panel-tabs {
+  display: flex;
+  flex-shrink: 0;
+  position: sticky;
+  top: 48px;
+  z-index: 9;
+  background: linear-gradient(180deg, rgba(16,18,25,0.99), rgba(10,12,17,0.99));
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-tab {
+  flex: 1;
+  padding: 9px 0 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+.panel-tab:hover { color: var(--text-secondary); }
+.panel-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: linear-gradient(180deg, rgba(240,168,48,0.09), transparent);
+  text-shadow: 0 0 10px rgba(240,168,48,0.35);
+}
+
 .panel-body {
   padding: 10px 13px 24px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.panel-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 
 .field { display: flex; flex-direction: column; gap: 3px; }

@@ -3,25 +3,23 @@
     <ConfigPanel
       :config="config"
       :geojson="geojson"
-      :is-firing="isRunning"
+      :progress="progress"
+      :in-pause="inPause"
+      :is-running="isRunning"
+      :process-loop-count="processLoopCount"
+      :trail-duration="trailDuration"
       @update-config="onUpdateConfig"
       @update-settings="onUpdateSettings"
       @load-session="onLoadSession"
+      @start="onStart"
+      @pause="onPause"
+      @reset="onReset"
     />
 
     <div class="app-main">
-      <FireControls
-        :geojson="geojson"
-        :progress="progress"
-        :in-pause="inPause"
-        :is-running="isRunning"
-        :process-loop-count="processLoopCount"
-        :settings="settings"
+      <MapTools
         :first-point-time="firstPointTime"
         :trail-duration="trailDuration"
-        @start="onStart"
-        @pause="onPause"
-        @reset="onReset"
         @clear-all="onClearAll"
         @undo="onUndo"
         @download="onDownload"
@@ -84,7 +82,7 @@ import downloadjs from 'downloadjs'
 import ConfigPanel from './components/ConfigPanel.vue'
 import MapView from './components/MapView.vue'
 import PointEditor from './components/PointEditor.vue'
-import FireControls from './components/FireControls.vue'
+import MapTools from './components/MapTools.vue'
 import FireLog from './components/FireLog.vue'
 
 import { useGeoJSON } from './composables/useGeoJSON.js'
@@ -105,6 +103,7 @@ const settings = reactive({
   showMap: true,
   subjectSpeedKMPH: 5,
   deviceSamplingSeconds: 60,
+  speedIsMaster: false,
   locationMarginError: 12,
   markLocationWithError: true,
   fireType: 'pointRate',

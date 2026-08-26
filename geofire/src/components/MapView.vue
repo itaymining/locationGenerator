@@ -72,6 +72,12 @@ let map = null
 // map from marker leaflet_id → accuracy circle layer
 const accuracyCircles = {}
 
+// Measurement tool state
+let measuring = false
+let measureLine = null
+let measureTooltip = null
+let measurePoints = []
+
 // Toggle accuracy circles when setting changes
 watch(() => props.settings.markLocationWithError, (show) => {
   if (show) {
@@ -141,12 +147,61 @@ onMounted(() => {
     rotateMode: false,
   })
 
+  map.pm.Toolbar.createCustomControl({
+    name: 'Measure',
+    block: 'custom',
+    className: 'leaflet-pm-icon-measure',
+    title: 'Measure distance',
+    toggle: true,
+    onClick: () => {
+      measuring = !measuring
+      if (measuring) startMeasuring()
+      else stopMeasuring()
+    },
+  })
+
   map.on('pm:create', onMapCreate)
 })
 
 onBeforeUnmount(() => {
   if (map) map.remove()
 })
+
+function startMeasuring() {
+  measurePoints = []
+  measureLine = L.polyline([], { color: '#e8a020', weight: 2, dashArray: '6 6' }).addTo(map)
+  map.getContainer().style.cursor = 'crosshair'
+  map.on('click', onMeasureClick)
+}
+
+function stopMeasuring() {
+  map.off('click', onMeasureClick)
+  map.getContainer().style.cursor = ''
+  if (measureLine) { measureLine.remove(); measureLine = null }
+  if (measureTooltip) { measureTooltip.remove(); measureTooltip = null }
+  measurePoints = []
+}
+
+function onMeasureClick(e) {
+  measurePoints.push(e.latlng)
+  measureLine.setLatLngs(measurePoints)
+
+  const meters = measurePoints.length > 1
+    ? turf.length(turf.lineString(measurePoints.map(p => [p.lng, p.lat])), { units: 'meters' })
+    : 0
+  const text = meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${meters.toFixed(0)} m`
+
+  if (!measureTooltip) {
+    measureTooltip = L.tooltip(e.latlng, {
+      permanent: true,
+      direction: 'right',
+      offset: [10, 0],
+      className: 'measure-tooltip',
+    }).addTo(map)
+  }
+  measureTooltip.setLatLng(e.latlng)
+  measureTooltip.setContent(text)
+}
 
 function getIconForFeature(feature, state = 'default') {
   const isMoving = feature.properties.heading !== null && feature.properties.heading !== undefined
@@ -304,6 +359,12 @@ function handlePoint(latlng) {
     [latlng.lat, latlng.lng],
   ])
   const distance = turf.lineDistance(line, { units: 'meters' })
+
+  if (props.settings.speedIsMaster) {
+    handlePointSpeedMaster(line, distance, speed, samplingSeconds, lastTime, gId, latlng)
+    return
+  }
+
   const totalPointsNeeded = Math.floor(distance / (speed / 3.6) / samplingSeconds)
 
   const toAdd = []
@@ -329,6 +390,53 @@ function handlePoint(latlng) {
     })
   }
   emit('add-features', toAdd)
+}
+
+// "Speed is master" mode: speed and sampling rate are both fixed, so the distance
+// between consecutive points is a fixed quantum (stepMeters). We walk the clicked
+// line in whole steps and never adjust that quantum to land exactly on the click.
+function handlePointSpeedMaster(line, distance, speed, samplingSeconds, lastTime, gId, latlng) {
+  const stepMeters = (speed / 3.6) * samplingSeconds
+  const steps = Math.floor(distance / stepMeters)
+
+  if (steps === 0) {
+    showSpeedWarning(latlng, speed)
+    return
+  }
+
+  const toAdd = []
+  let t = lastTime.clone()
+  for (let i = 1; i <= steps; i++) {
+    const point = turf.along(line, stepMeters * i, { units: 'meters' })
+    t = t.clone().add(samplingSeconds, 'seconds')
+    toAdd.push({
+      lat: point.geometry.coordinates[0],
+      lng: point.geometry.coordinates[1],
+      time: t.clone(),
+      addRand: false,
+      setZero: false,
+      groupId: gId,
+    })
+  }
+  // Any leftover distance past the last whole step is silently dropped —
+  // it can't be reached without breaking the fixed speed, so it's just not drawn.
+  emit('add-features', toAdd)
+}
+
+// Brief, non-blocking warning shown when a click is too close to the previous
+// point to fit even one interval at the fixed speed. Auto-dismisses; nothing
+// for the user to click or close.
+function showSpeedWarning(latlng, speed) {
+  const warn = L.tooltip(latlng, {
+    permanent: true,
+    direction: 'top',
+    offset: [0, -8],
+    className: 'speed-warn-tooltip',
+  }).setContent(`Too close for ${speed} km/h`).addTo(map)
+
+  requestAnimationFrame(() => warn.getElement()?.classList.add('show'))
+  setTimeout(() => warn.getElement()?.classList.remove('show'), 300)
+  setTimeout(() => warn.remove(), 550)
 }
 
 async function handleCircle(latlng, radius) {
@@ -421,5 +529,42 @@ defineExpose({
     inset 0 0 0 1px rgba(240,168,48,0.08),
     inset 0 7px 28px rgba(6,7,11,0.55),
     inset 0 -7px 28px rgba(6,7,11,0.45);
+}
+</style>
+
+<!-- unscoped: Leaflet/Geoman create these nodes outside Vue's render tree -->
+<style>
+.leaflet-pm-toolbar .leaflet-pm-icon-measure {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="none" stroke="%235B5B5B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-45 12 12)"><rect x="3" y="9" width="18" height="6" rx="1"/><line x1="7" y1="9" x2="7" y2="12"/><line x1="11" y1="9" x2="11" y2="12"/><line x1="15" y1="9" x2="15" y2="12"/><line x1="19" y1="9" x2="19" y2="12"/></g></svg>');
+}
+.measure-tooltip {
+  background: #0c0e16;
+  color: #dde1ea;
+  border: 1px solid rgba(240, 168, 48, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  box-shadow: none;
+}
+.measure-tooltip::before {
+  border-right-color: #0c0e16;
+}
+.speed-warn-tooltip {
+  background: #0c0e16;
+  color: #dde1ea;
+  border: 1px solid rgba(240, 168, 48, 0.5);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+.speed-warn-tooltip.show {
+  opacity: 1;
+}
+.speed-warn-tooltip::before {
+  border-top-color: #0c0e16 !important;
 }
 </style>

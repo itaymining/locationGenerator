@@ -1,37 +1,6 @@
 <template>
-  <div class="fire-controls">
+  <div class="map-tools">
     <div class="controls-row">
-
-      <!-- Fire actions -->
-      <div class="btn-group">
-        <button
-          class="btn btn-success fire-btn"
-          :disabled="isFiring"
-          data-tip="Fire trail to endpoint"
-          @click="$emit('start')"
-        >
-          <span class="btn-icon-sym">▶</span> START
-        </button>
-        <button
-          class="btn btn-ghost"
-          :disabled="!canPause"
-          :data-tip="inPause ? 'Resume firing' : 'Pause firing'"
-          @click="$emit('pause')"
-        >
-          <span class="btn-icon-sym">{{ inPause ? '▶' : '⏸' }}</span>
-          {{ inPause ? 'RESUME' : 'PAUSE' }}
-        </button>
-        <button
-          class="btn btn-ghost"
-          :disabled="!isRunning && !inPause && progress === 0"
-          data-tip="Reset all markers to default state"
-          @click="$emit('reset')"
-        >
-          <span class="btn-icon-sym">↺</span> RESET
-        </button>
-      </div>
-
-      <div class="divider-v"></div>
 
       <!-- Map tools -->
       <div class="tool-group">
@@ -86,31 +55,6 @@
         </button>
       </div>
 
-      <div class="divider-v"></div>
-
-      <!-- Status -->
-      <div class="status-area">
-        <template v-if="progress > 0">
-          <div v-if="!inPause" class="firing-dot"></div>
-          <div class="progress-bar-track" style="width: 90px">
-            <div class="progress-bar-fill" :style="{ width: progressPct + '%' }"></div>
-          </div>
-          <span class="stat">{{ progress }}<span class="stat-sep">/</span>{{ total }}</span>
-          <span class="stat muted">{{ progressPct }}%</span>
-          <span class="stat muted">{{ timeLeft }}</span>
-          <span class="stat mono">{{ currentTimestamp }}</span>
-          <span v-if="settings.advanceTrailOverTime" class="badge badge-info">
-            LOOP {{ processLoopCount }}/{{ settings.advanceTrailOverTimeNumOfLoops }}
-          </span>
-        </template>
-        <template v-else>
-          <span class="stat">
-            <span class="stat-count">{{ total }}</span> pts
-          </span>
-          <span v-if="trailDurationStr" class="stat muted mono">{{ trailDurationStr }}</span>
-        </template>
-      </div>
-
     </div>
 
     <!-- Time shift panel -->
@@ -145,18 +89,11 @@ import { ref, computed } from 'vue'
 import moment from 'moment'
 
 const props = defineProps({
-  geojson: { type: Object, required: true },
-  progress: { type: Number, default: 0 },
-  inPause: { type: Boolean, default: false },
-  isRunning: { type: Boolean, default: false },
-  processLoopCount: { type: Number, default: 1 },
-  settings: { type: Object, required: true },
   firstPointTime: { type: Object, default: null },
   trailDuration: { type: Object, default: null },
 })
 
 const emit = defineEmits([
-  'start', 'pause', 'reset',
   'clear-all', 'undo', 'download', 'zoom-last', 'toggle-raw',
   'change-trail-times',
 ])
@@ -164,43 +101,6 @@ const emit = defineEmits([
 const showTimeShift = ref(false)
 const newFrom = ref('')
 const newTo = ref('')
-
-const total = computed(() => props.geojson.features.length)
-const isFiring = computed(() => props.isRunning)
-const canPause = computed(() => props.isRunning || props.inPause)
-
-const progressPct = computed(() =>
-  total.value > 0 ? Math.ceil((props.progress * 100) / total.value) : 0
-)
-
-const timeLeft = computed(() => {
-  if (!props.settings) return ''
-  const secs = props.settings.fireType === 'pointRate'
-    ? props.settings.fireTimeoutSec * (total.value - props.progress)
-    : 0
-  const d = new Date(null)
-  d.setSeconds(secs)
-  return d.toISOString().substr(11, 8)
-})
-
-const currentTimestamp = computed(() => {
-  const idx = Math.min(props.progress, total.value - 1)
-  if (total.value === 0) return ''
-  return moment(props.geojson.features[idx].properties.time.utc).format('MM-DD HH:mm:ss')
-})
-
-const trailDurationStr = computed(() => {
-  if (!props.trailDuration || props.trailDuration.asSeconds() <= 0) return ''
-  const d = props.trailDuration
-  const parts = []
-  if (d.days() > 0) parts.push(`${d.days()}d`)
-  parts.push([
-    String(d.hours()).padStart(2, '0'),
-    String(d.minutes()).padStart(2, '0'),
-    String(d.seconds()).padStart(2, '0'),
-  ].join(':'))
-  return parts.join(' ')
-})
 
 const originalFrom = computed(() =>
   props.firstPointTime ? props.firstPointTime.format('YYYY-MM-DDTHH:mm') : ''
@@ -240,7 +140,7 @@ function applyTimeShift() {
 </script>
 
 <style scoped>
-.fire-controls {
+.map-tools {
   background: linear-gradient(180deg, rgba(16,18,25,0.96), rgba(9,11,16,0.96));
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 0 rgba(240,168,48,0.1), 0 6px 20px rgba(0,0,0,0.3);
@@ -261,11 +161,6 @@ function applyTimeShift() {
   flex-wrap: wrap;
   padding: 6px 0;
 }
-
-.btn-group { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
-
-.fire-btn { font-size: 12px; letter-spacing: 0.1em; }
-.btn-icon-sym { font-size: 11px; line-height: 1; }
 
 /* Tool buttons — icon + label chips */
 .tool-group { display: flex; gap: 3px; align-items: center; flex-shrink: 0; }
@@ -310,51 +205,6 @@ function applyTimeShift() {
   letter-spacing: 0.11em;
   text-transform: uppercase;
   line-height: 1;
-}
-
-.divider-v {
-  width: 1px;
-  height: 20px;
-  background: var(--border);
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.status-area {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  min-width: 0;
-}
-
-.stat {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-family: var(--font-condensed);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-.stat.muted { color: var(--text-muted); }
-.stat.mono { font-family: var(--font-mono); font-size: 10px; }
-.stat-sep { color: var(--text-muted); margin: 0 1px; }
-.stat-count { color: var(--text-primary); font-weight: 600; }
-
-/* firing pulse */
-.firing-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-success);
-  animation: pulse-dot 1s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0,214,143,0.4); }
-  50% { opacity: 0.5; transform: scale(0.7); box-shadow: 0 0 0 4px rgba(0,214,143,0); }
 }
 
 /* Time shift panel */

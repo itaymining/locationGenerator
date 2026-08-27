@@ -71,10 +71,10 @@
           </label>
           <input class="input input-sm" type="number" v-model.number="localSettings.subjectSpeedKMPH" @input="syncSettings" />
         </div>
-        <div class="field">
+        <div class="field" :class="{ 'field-dimmed': localSettings.speedIsMaster }">
           <label class="label label-with-help">
             Accuracy m
-            <HelpTip text="GPS accuracy radius in metres. Each point is randomly offset within this radius to simulate real device noise." />
+            <HelpTip :text="accuracyTip" />
           </label>
           <input class="input input-sm" type="number" v-model.number="localSettings.locationMarginError" @input="syncSettings" />
         </div>
@@ -332,6 +332,13 @@ const localSettings = reactive({
 const sessions = ref(loadSessions())
 const sessionNames = computed(() => Object.keys(sessions.value))
 
+// Accuracy has three effects: the reported value, the map circle radius, and a
+// random per-point offset. Strict speed mode keeps the first two but drops the
+// offset, so the tip has to say which part still applies.
+const accuracyTip = computed(() => localSettings.speedIsMaster
+  ? 'GPS accuracy radius in metres. Reported with every point and used as the accuracy circle radius. Strict speed mode applies no random offset — points sit exactly on the line.'
+  : 'GPS accuracy radius in metres. Reported with every point and used as the accuracy circle radius. Intermediate points along a trail are also randomly offset within this radius to simulate device noise.')
+
 function syncConfig() {
   emit('update-config', {
     endpointUrl: local.endpointUrl,
@@ -484,6 +491,15 @@ function removeSession(name) {
 
 .field { display: flex; flex-direction: column; gap: 3px; }
 .label-with-help { display: flex; align-items: center; gap: 4px; }
+
+/* Strict speed mode drops the random offset but keeps the reported value and
+   the circle radius, so the field stays editable — only visually de-emphasised. */
+.field-dimmed {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+.field-dimmed:hover,
+.field-dimmed:focus-within { opacity: 1; }
 
 .fields-grid {
   display: grid;
